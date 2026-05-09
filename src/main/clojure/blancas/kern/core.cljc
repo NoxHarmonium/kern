@@ -142,7 +142,7 @@ Addison-Wesley, 1975"
 (defrecord PState [input pos value ok empty user error])
 
 
-(defn- make-pos
+(defn make-pos
   "Makes a position record."
   ([src] (make-pos src 1 1))
   ([src ln col] (->PPosition (or src "") ln col)))
@@ -218,7 +218,7 @@ Addison-Wesley, 1975"
         (reduce #(conj %1 (get-msg %2)) [] lst)))))
 
 
-(defn- get-msg-str
+(defn get-msg-str
   "Gets the text of error messages separated by \\n."
   [err]
   (let [eol #?(:clj (System/getProperty "line.separator") :cljs "\n")]

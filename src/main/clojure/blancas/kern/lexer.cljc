@@ -9,10 +9,16 @@
 (ns ^{:doc "The Kern Lexer library."
       :author "Armando Blancas"}
   blancas.kern.lexer
-  (:require [blancas.kern.core :refer :all]
+  (:require [blancas.kern.core :refer [clear-empty return fail satisfy <?> expect <|> >>= >> <<
+                                      <*> <:> many many0 many1 optional option skip skip-many
+                                      skip-many1 sep-by1 sep-by between times not-followed-by
+                                      many-till <+> any-char letter white-space digit hex-digit
+                                      oct-digit alpha-num sym* sym- token* token- word* word-
+                                      one-of* none-of* new-line* eof field* value def- defn*
+                                      member?]]
             [blancas.kern.i18n :refer [i18n fmt di18n]]
             [clojure.string :refer [lower-case]])
-  #?(:cljs (:require-macros [blancas.kern.core blancas.kern.lexer])))
+  #?(:cljs (:require-macros [blancas.kern.core] [blancas.kern.lexer])))
 
 
 ;; +-------------------------------------------------------------+
@@ -53,7 +59,7 @@
      :leading-sign       true}))
 
 
-(def haskell-style
+(def haskell-style-def
   "Lexical settings for Haskell-style languages."
   (assoc basic-def
     :type                :Haskell
@@ -63,7 +69,7 @@
     :nested-comments     true))
 
 
-(def java-style
+(def java-style-def
   "Lexical settings for Java-style languages."
   (assoc basic-def
     :type                :Java
@@ -72,13 +78,13 @@
     :comment-line        "//"))
 
 
-(def c-style
+(def c-style-def
   "Lexical settings for C-style languages."
-  (assoc java-style
+  (assoc java-style-def
     :type                :C))
 
 
-(def shell-style
+(def shell-style-def
   "Lexical settings for shell-style languages."
   (assoc basic-def
     :type                :Shell

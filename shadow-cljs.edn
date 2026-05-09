@@ -1,4 +1,4 @@
-{:source-paths ["src/main/clojure"]
+{:source-paths ["src/main/clojure" "src/test/clojure"]
  :dependencies [[org.clojure/clojurescript "1.11.132"]]
  :builds
  {:app  {:target     :browser
@@ -7,4 +7,5 @@
          ;; Update :entries to point at your demo app's init namespace
          :modules    {:main {:entries [blancas.kern.core]}}}
   :test {:target    :node-test
-         :output-to "target/test/tests.js"}}}
+         :output-to "target/test/tests.js"
+         :ns-regexp "blancas\\.kern\\.test"}}}

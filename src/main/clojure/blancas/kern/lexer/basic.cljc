@@ -22,7 +22,7 @@ line-continuation    Backslash
 trim-newline         Yes"
       :author "Armando Blancas"}
   blancas.kern.lexer.basic
-  (:require [blancas.kern.core :refer :all]
+  (:require [blancas.kern.core :refer [def-]]
             [blancas.kern.lexer :as lex])
   #?(:cljs (:require-macros [blancas.kern.core])))
 

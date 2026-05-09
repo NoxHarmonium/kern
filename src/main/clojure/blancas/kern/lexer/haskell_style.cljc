@@ -24,11 +24,11 @@ trim-newline         Yes
 Literal values follow the rules of the Haskell programming language."
       :author "Armando Blancas"}
   blancas.kern.lexer.haskell-style
-  (:require [blancas.kern.core :refer :all]
+  (:require [blancas.kern.core :refer [def-]]
             [blancas.kern.lexer :as lex])
   #?(:cljs (:require-macros [blancas.kern.core])))
 
-(def- rec (lex/make-parsers lex/haskell-style))
+(def- rec (lex/make-parsers lex/haskell-style-def))
 
 (def trim       (:trim       rec))
 (def lexeme     (:lexeme     rec))
