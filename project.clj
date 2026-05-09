@@ -3,7 +3,8 @@
   :license {:name "Eclipse Public License"
 	    :url "http://www.eclipse.org/legal/epl-v10.html"}
   :url "https://github.com/blancas/kern"
-  :dependencies [[org.clojure/clojure "1.8.0"]]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojurescript "1.11.132"]]
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :jvm-opts ["-Dfile.encoding=UTF-8"]

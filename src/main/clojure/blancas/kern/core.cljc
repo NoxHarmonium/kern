@@ -31,10 +31,11 @@ Addison-Wesley, 1975"
       :author "Armando Blancas"}
   blancas.kern.core
   (:refer-clojure :exclude [cat])
-  (:require [blancas.kern.i18n :refer :all]
+  (:require [blancas.kern.i18n :refer [i18n i18n-merge fmt di18n dfmt]]
             [clojure.string :refer [join]]
-            [clojure.java.io :refer [reader]]
-            [clojure.pprint :refer [pprint]]))
+            #?(:clj [clojure.java.io :refer [reader]])
+            #?(:clj [clojure.pprint :refer [pprint]]))
+  #?(:cljs (:require-macros [blancas.kern.core])))
 
 
 (defmacro def-
@@ -58,19 +59,21 @@ Addison-Wesley, 1975"
     `(fn [~x] (~p ~x))))
 
 
+#?(:clj
 (defn char-seq
   "Returns characters from rdr as a lazy sequence.
    rdr must implement java.io.Reader"
   [^java.io.Reader rdr]
   (let [c (.read rdr)]
     (when-not (neg? c)
-      (cons (char c) (lazy-seq (char-seq rdr))))))
+      (cons (char c) (lazy-seq (char-seq rdr)))))))
 
 
+#?(:clj
 (defn f->s
   "Gets a character sequence from a file-like object."
   ([f] (slurp f))
-  ([f e] (slurp f :encoding e)))
+  ([f e] (slurp f :encoding e))))
 
 
 (defn member?
@@ -95,22 +98,28 @@ Addison-Wesley, 1975"
 
 
 ;; Error types.
-(def- err-system   0) ;; Used in satisfy for specific unexpected input.
-(def- err-unexpect 1) ;; Used on any unexpected input to show a message.
-(def- err-expect   2) ;; Used to show a message of what's expected.
-(def- err-message  3) ;; Used for any kind of message from client code.
+(def ^:private err-system   0) ;; Used in satisfy for specific unexpected input.
+(def ^:private err-unexpect 1) ;; Used on any unexpected input to show a message.
+(def ^:private err-expect   2) ;; Used to show a message of what's expected.
+(def ^:private err-message  3) ;; Used for any kind of message from client code.
 
 ;; Keeps the position of the input:
 ;; src   - a string that identifies the source of input
 ;; line  - the line into the input stream.
 ;; col   - the column into the line.
 (defrecord PPosition [src line col]
-  Comparable
-    (compareTo [this other]
-      (let [result (compare line (:line other))]
-        (if (zero? result)
-          (compare col (:col other))
-          result))))
+  #?@(:clj  [Comparable
+             (compareTo [this other]
+               (let [result (compare line (:line other))]
+                 (if (zero? result)
+                   (compare col (:col other))
+                   result)))]
+      :cljs [IComparable
+             (-compare [this other]
+               (let [result (compare line (:line other))]
+                 (if (zero? result)
+                   (compare col (:col other))
+                   result)))]))
 
 ;; A PMessage consists of:
 ;; type  - One of the error types listed above.
@@ -193,7 +202,7 @@ Addison-Wesley, 1975"
 	cnt (count opts)]
     (fmt :expecting (if (= cnt 1) (first opts) (show opts)))))
 
-  
+
 (defn- get-msg-list
   "Gets the text of error messages as a list."
   [{msgs :msgs}]
@@ -212,7 +221,7 @@ Addison-Wesley, 1975"
 (defn- get-msg-str
   "Gets the text of error messages separated by \\n."
   [err]
-  (let [eol (System/getProperty "line.separator")]
+  (let [eol #?(:clj (System/getProperty "line.separator") :cljs "\n")]
     (join eol (get-msg-list err))))
 
 
@@ -246,7 +255,7 @@ Addison-Wesley, 1975"
 	    (cons err (filter not-ex lst)))]
     (let [m (->PMessage err-expect msg)]
       (update-in s [:error :msgs] update m))))
-  
+
 
 ;; +-------------------------------------------------------------+
 ;; |              Public supporting functions.                   |
@@ -537,7 +546,7 @@ Addison-Wesley, 1975"
    of sep; returns the results of p in a vector."
   [sep p] (many (<< p sep)))
 
-  
+
 (defn end-by1
   "Parses p one or more times, separated and ended by applications
    of sep; returns the results of p in a vector."
@@ -550,7 +559,7 @@ Addison-Wesley, 1975"
   "Parses p one or more times separated, and optionally ended by sep;
    collects the results in a vector."
   [sep p]
-  (>>= p (fn [x] 
+  (>>= p (fn [x]
            (<|> (>>= (>> sep (sep-end-by sep p)) (fn [y] (return (reduce conj [x] y))))
                 (return [x])))))
 
@@ -574,14 +583,14 @@ Addison-Wesley, 1975"
     (apply <*> (repeat n p))
     (return [])))
 
-    
+
 (defn look-ahead
   "Applies p and returns the result; it consumes no input."
   [p]
   (fn [s]
     (let [st (p s)]
       (assoc s :value (:value st)))))
-  
+
 
 (defn predict
   "Applies p; if it succeeds it consumes no input."
@@ -639,43 +648,48 @@ Addison-Wesley, 1975"
 
 (def letter
   "Parses a letter."
-  (<?> (satisfy (fn [^Character c] (Character/isLetter c)))
+  (<?> (satisfy (fn [c] #?(:clj (Character/isLetter c)
+                           :cljs (boolean (.test (js/RegExp. "^\\p{L}$" "u") (str c))))))
        (di18n :letter)))
 
 
 (def lower
   "Parses a lower-case letter."
-  (<?> (satisfy (fn [^Character c] (Character/isLowerCase c)))
+  (<?> (satisfy (fn [c] #?(:clj (Character/isLowerCase c)
+                           :cljs (boolean (.test (js/RegExp. "^\\p{Ll}$" "u") (str c))))))
        (di18n :lower)))
 
 
 (def upper
   "Parses an upper-case letter."
-  (<?> (satisfy (fn [^Character c] (Character/isUpperCase c)))
+  (<?> (satisfy (fn [c] #?(:clj (Character/isUpperCase c)
+                           :cljs (boolean (.test (js/RegExp. "^\\p{Lu}$" "u") (str c))))))
        (di18n :upper)))
 
 
 (def white-space
   "Parses a whitespace character."
-  (<?> (satisfy (fn [^Character c] (Character/isWhitespace c)))
+  (<?> (satisfy (fn [c] #?(:clj (Character/isWhitespace c)
+                           :cljs (boolean (.test #"^\s$" (str c))))))
        (di18n :whitespace)))
 
 
 (def space
   "Parses the space character."
-  (<?> (satisfy (fn [^Character c] (.equals c \space)))
+  (<?> (satisfy (fn [c] (= c \space)))
        (di18n :space)))
 
 
 (def tab
   "Parses the tab character."
-  (<?> (satisfy (fn [^Character c] (.equals c \tab)))
+  (<?> (satisfy (fn [c] (= c \tab)))
        (di18n :tab)))
 
 
 (def digit
   "Parses a digit."
-  (<?> (satisfy (fn [^Character c] (Character/isDigit c)))
+  (<?> (satisfy (fn [c] #?(:clj (Character/isDigit c)
+                           :cljs (boolean (.test (js/RegExp. "^\\p{Nd}$" "u") (str c))))))
        (di18n :digit)))
 
 
@@ -695,23 +709,27 @@ Addison-Wesley, 1975"
 
 (def alpha-num
   "Parses a letter or digit."
-  (<?> (satisfy (fn [^Character c] (Character/isLetterOrDigit c)))
+  (<?> (satisfy (fn [c] #?(:clj (Character/isLetterOrDigit c)
+                           :cljs (boolean (.test (js/RegExp. "^[\\p{L}\\p{Nd}]$" "u") (str c))))))
        (di18n :alpha-num)))
 
 
 (defn sym*
   "Parses a single symbol x (a character)."
-  [^Character x]
-  (<?> (satisfy (fn [^Character c] (.equals c x)))
+  [x]
+  (<?> (satisfy (fn [c] (= c x)))
        (with-out-str (pr x))))
 
 
 (defn sym-
   "Parses a single symbol x (a character); not case-sensitive."
-  [^Character x]
-  (<?> (>> (satisfy (fn [^Character c]
-		      (= (Character/toLowerCase x) (Character/toLowerCase c))))
-	   (return x))
+  [x]
+  (<?> (>> (satisfy (fn [c]
+                      (= #?(:clj  (Character/toLowerCase x)
+                             :cljs (.toLowerCase (str x)))
+                         #?(:clj  (Character/toLowerCase c)
+                             :cljs (.toLowerCase (str c))))))
+           (return x))
        (with-out-str (pr x))))
 
 
@@ -772,12 +790,12 @@ Addison-Wesley, 1975"
 
 (defn one-of*
   "Succeeds if the next character is in the supplied string."
-  [^String cs] (satisfy #(>= (.indexOf cs (int %)) 0)))
+  [cs] (satisfy #(>= (.indexOf cs #?(:clj (int %) :cljs (str %))) 0)))
 
 
 (defn none-of*
   "Succeeds if the next character is not in the supplied string."
-  [^String cs] (satisfy #(neg? (.indexOf cs (int %)))))
+  [cs] (satisfy #(neg? (.indexOf cs #?(:clj (int %) :cljs (str %))))))
 
 
 (def new-line*
@@ -835,7 +853,8 @@ Addison-Wesley, 1975"
   "Parses a decimal integer delimited by any character that
    is not a decimal digit."
   (<?> (>>= (<+> (many1 digit))
-	    (fn [x] (return (read-string (rmvz x)))))
+	    (fn [x] (return #?(:clj  (read-string (rmvz x))
+                              :cljs (js/parseInt x 10)))))
        (di18n :dec-lit)))
 
 
@@ -843,7 +862,8 @@ Addison-Wesley, 1975"
   "Parses an octal integer delimited by any character that
    is not an octal digit."
   (<?> (>>= (<+> (many1 oct-digit))
-	    (fn [x] (return (read-string (str "0" x)))))
+	    (fn [x] (return #?(:clj  (read-string (str "0" x))
+                              :cljs (js/parseInt x 8)))))
        (di18n :oct-lit)))
 
 
@@ -851,7 +871,8 @@ Addison-Wesley, 1975"
   "Parses a hex integer delimited by any character that
    is not a hex digit."
   (<?> (>>= (<+> (many1 hex-digit))
-	    (fn [x] (return (read-string (str "0x" x)))))
+	    (fn [x] (return #?(:clj  (read-string (str "0x" x))
+                              :cljs (js/parseInt x 16)))))
        (di18n :hex-lit)))
 
 
@@ -862,7 +883,8 @@ Addison-Wesley, 1975"
    found must be followed by at least one digit."
   (<?> (>>= (<+> (many1 digit)
 	         (option ".0" (<*> (sym* \.) (many1 digit))))
-            (fn [x] (return (read-string x))))
+            (fn [x] (return #?(:clj  (read-string x)
+                               :cljs (js/parseFloat x)))))
        (di18n :float-lit)))
 
 
@@ -935,6 +957,7 @@ Addison-Wesley, 1975"
   ([p cs src us] (:value (parse p cs src us))))
 
 
+#?(:clj
 (defn print-error
   "Prints error messages in a PState record."
   [s]
@@ -944,9 +967,10 @@ Addison-Wesley, 1975"
 	ln  (:line pos)
 	col (:col pos)]
     (printf (i18n :err-pos) src ln col)
-    (println (get-msg-str err))))
+    (println (get-msg-str err)))))
 
 
+#?(:clj
 (defn run
   "For testing parsers, e.g. at the REPL. Calls (parse) on the
    arguments and prints the result. If p succeeds it prints the
@@ -959,17 +983,19 @@ Addison-Wesley, 1975"
 	 (pprint (:value s))
 	 (print-error s))
        (if-let [us (:user s)]
-	 (pprint us)))))
+	 (pprint us))))))
 
 
+#?(:clj
 (defn run*
   "For testing parsers, e.g. at the REPL. Works like (run) but
    on success it pretty-prints the resulting parser state."
   ([p cs] (run* p cs nil nil))
   ([p cs src] (run* p cs src nil))
-  ([p cs src us] (pprint (parse p cs src us))))
+  ([p cs src us] (pprint (parse p cs src us)))))
 
 
+#?(:clj
 (defn parse-file
   "Parses a file; takes an optional encoding and user state,
    which default to utf-8 and nil. Returns a PState record."
@@ -977,9 +1003,10 @@ Addison-Wesley, 1975"
   ([p f en] (parse-file p f en nil))
   ([p f en us]
    (let [src (if (string? f) f "")]
-     (parse p (slurp f :encoding en) src us))))
+     (parse p (slurp f :encoding en) src us)))))
 
 
+#?(:clj
 (defn runf
   "For testing, e.g. at the REPL, with input from files.
    Prints the results."
@@ -987,15 +1014,16 @@ Addison-Wesley, 1975"
   ([p f en] (runf p f en nil))
   ([p f en us]
    (let [src (if (string? f) f "")]
-     (run p (slurp f :encoding en) src us))))
+     (run p (slurp f :encoding en) src us)))))
 
 
+#?(:clj
 (defn runf*
   "For testing, e.g. at the REPL, with input from files.
    Pretty-prints the results."
   ([p f] (runf* p f "UTF-8" nil))
   ([p f en] (runf* p f en nil))
-  ([p f en us] (pprint (parse-file p f en us))))
+  ([p f en us] (pprint (parse-file p f en us)))))
 
 
 ;; +-------------------------------------------------------------+
@@ -1025,6 +1053,7 @@ Addison-Wesley, 1975"
       (parse p cs src us))))
 
 
+#?(:clj
 (defn parse-data-file
   "Works like (parse-file) but with error diagnostics disabled for
    better performance. It's intended for data files that can be
@@ -1036,4 +1065,4 @@ Addison-Wesley, 1975"
               str-pos   str-pos-x
               merge-err merge-err-x
               set-ex    set-ex-x]
-      (parse-file p f en us))))
+      (parse-file p f en us)))))

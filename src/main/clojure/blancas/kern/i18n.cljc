@@ -8,7 +8,9 @@
 
 (ns ^{:doc "Support for a simple i18n scheme."
       :author "Armando Blancas"}
-  blancas.kern.i18n)
+  blancas.kern.i18n
+  #?(:cljs (:require [goog.string :as gstring]
+                     [goog.string.format])))
 
 
 (def ^:private default
@@ -64,7 +66,7 @@
 (defn fmt
   "Formats a string with a key and more arguments."
   [k & more]
-  (apply format (i18n k) more))
+  (apply #?(:clj format :cljs gstring/format) (i18n k) more))
 
 
 (defn di18n
@@ -77,4 +79,4 @@
   "Returns a Delay instance with a string formatted with a key and more
    arguments. Useful in (def)'ed expressions that evaluate too soon."
   [k & more]
-  (delay (apply format (i18n k) more)))
+  (delay (apply #?(:clj format :cljs gstring/format) (i18n k) more)))

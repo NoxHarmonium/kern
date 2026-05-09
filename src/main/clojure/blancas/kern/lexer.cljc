@@ -9,10 +9,12 @@
 (ns ^{:doc "The Kern Lexer library."
       :author "Armando Blancas"}
   blancas.kern.lexer
-  (:use [blancas.kern core i18n]
-	[clojure.string :only (lower-case)]))
+  (:require [blancas.kern.core :refer :all]
+            [blancas.kern.i18n :refer [i18n fmt di18n]]
+            [clojure.string :refer [lower-case]])
+  #?(:cljs (:require-macros [blancas.kern.core blancas.kern.lexer])))
 
-		
+
 ;; +-------------------------------------------------------------+
 ;; |                    Language definitions.                    |
 ;; +-------------------------------------------------------------+
@@ -127,7 +129,7 @@
   "Skips over any whitespace, including comments (if defined), at
    the start of the input. Whether newline characters are removed
    as whitespace is configured by :trim-newline. When that setting
-   is true, the setting :line-continuation is activated." 
+   is true, the setting :line-continuation is activated."
   [] nil)
 
 (defn* lexeme
@@ -388,6 +390,11 @@
 (def space-ascii 32)
 
 
+#?(:cljs
+(defn- char-code
+  "Returns the numeric code point of a character."
+  [c] (.charCodeAt (str c) 0)))
+
 (def- esc-char
   "Parses an escape code for a basic char."
   (let [codes (zipmap "btnfr'\"\\/" "\b\t\n\f\r'\"\\/")]
@@ -398,7 +405,7 @@
 (defn- basic-char
   "Parses an unquoted character literal. Character c must be escaped."
   [c]
-  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= (int %) space-ascii)))
+  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= #?(:clj (int %) :cljs (char-code %)) space-ascii)))
             (>> (sym* \\) esc-char))
        (i18n :char-lit)))
 
@@ -407,8 +414,8 @@
   "Parses an octal escape code; the result is the encoded char."
   (>>= (<+> (many1 oct-digit))
        (fn [x]
-	 (let [n (Integer/parseInt x 8)]
-	   (if (<= n 0377)
+	 (let [n #?(:clj (Integer/parseInt x 8) :cljs (js/parseInt x 8))]
+	   (if (<= n 255)
 	     (return (char n))
 	     (fail (i18n :bad-octal)))))))
 
@@ -416,13 +423,15 @@
 (def- esc-uni
   "Parses a unicode escape code; the result is the encoded char."
   (>>= (<+> (>> (sym* \u) (times 4 hex-digit)))
-       (fn [x] (return (aget (Character/toChars (Integer/parseInt x 16)) 0)))))
+       (fn [x] (let [n #?(:clj (Integer/parseInt x 16) :cljs (js/parseInt x 16))]
+                 (return #?(:clj  (aget (Character/toChars n) 0)
+                            :cljs (.fromCodePoint js/String n)))))))
 
 
 (defn- java-char
   "Parses an unquoted Java character literal. Character c must be escaped."
   [c]
-  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= (int %) space-ascii)))
+  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= #?(:clj (int %) :cljs (char-code %)) space-ascii)))
 	    (>> (sym* \\)
 		(<?> (<|> esc-char esc-oct esc-uni)
 		     (i18n :esc-code-j))))
@@ -439,19 +448,23 @@
 (def- c-esc-uni
   "Parses a long unicode escape code; the result is the encoded char."
   (>>= (<+> (>> (sym* \U) (times 8 hex-digit)))
-       (fn [x] (return (aget (Character/toChars (Integer/parseInt x 16)) 0)))))
+       (fn [x] (let [n #?(:clj (Integer/parseInt x 16) :cljs (js/parseInt x 16))]
+                 (return #?(:clj  (aget (Character/toChars n) 0)
+                            :cljs (.fromCodePoint js/String n)))))))
 
 
 (def- c-esc-hex
   "Parses a hex escape code; the result is the encoded char."
   (>>= (<+> (>> (sym- \x) (times 2 hex-digit)))
-       (fn [x] (return (aget (Character/toChars (Integer/parseInt x 16)) 0)))))
+       (fn [x] (let [n #?(:clj (Integer/parseInt x 16) :cljs (js/parseInt x 16))]
+                 (return #?(:clj  (aget (Character/toChars n) 0)
+                            :cljs (.fromCodePoint js/String n)))))))
 
 
 (defn- c-char
   "Parses an unquoted C character literal. Character c must be escaped."
   [c]
-  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= (int %) space-ascii)))
+  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= #?(:clj (int %) :cljs (char-code %)) space-ascii)))
 	    (>> (sym* \\)
 		(<?> (<|> c-esc-hex c-esc-char esc-oct esc-uni c-esc-uni)
 		     (i18n :esc-code-c))))
@@ -462,8 +475,8 @@
   "Parses a Haskell octal escape code; the result is the encoded char."
   (>>= (<+> (>> (sym* \o) (many1 oct-digit)))
        (fn [x]
-	 (let [n (Integer/parseInt x 8)]
-	   (if (<= n 04177777)
+	 (let [n #?(:clj (Integer/parseInt x 8) :cljs (js/parseInt x 8))]
+	   (if (<= n 1114111)
 	     (return (char n))
 	     (fail (i18n :bad-oct-h)))))))
 
@@ -472,7 +485,7 @@
   "Parses a Haskell decimal escape code; the result is the encoded char."
   (>>= (<+> (many1 digit))
        (fn [x]
-	 (let [n (Integer/parseInt x)]
+	 (let [n #?(:clj (Integer/parseInt x) :cljs (js/parseInt x 10))]
 	   (if (<= n 1114111)
 	     (return (char n))
 	     (fail (i18n :bad-dec-h)))))))
@@ -482,7 +495,7 @@
   "Parses a Haskell hex escape code; the result is the encoded char."
   (>>= (<+> (>> (sym* \x) (many1 hex-digit)))
        (fn [x]
-	 (let [n (Integer/parseInt x 16)]
+	 (let [n #?(:clj (Integer/parseInt x 16) :cljs (js/parseInt x 16))]
 	   (if (<= n 0x10ffff)
 	     (return (char n))
 	     (fail (i18n :bad-hex-h)))))))
@@ -491,7 +504,7 @@
 (defn- haskell-char
   "Parses Haskell character literals."
   [c]
-  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= (int %) space-ascii)))
+  (<?> (<|> (satisfy #(and (not= % c) (not= % \\) (>= #?(:clj (int %) :cljs (char-code %)) space-ascii)))
 	    (>> (sym* \\)
 		(<?> (<|> h-esc-hex h-esc-oct c-esc-char h-esc-dec)
 		     (i18n :esc-code-h))))
@@ -573,10 +586,10 @@
 
 	new-line
 	(lexeme new-line*)
-	
+
         one-of
         (fn [cs] (lexeme (one-of* cs)))
-	
+
         none-of
 	(fn [cs] (lexeme (none-of* cs)))
 
@@ -633,19 +646,22 @@
 	dec-lit
 	(let [lead (if (:leading-sign rec) sign (return nil))]
 	  (<?> (>>= (<:> (lexeme (<+> lead (many1 digit) int-suffix)))
-                    (fn [x] (return (read-string x))))
+                    (fn [x] (return #?(:clj  (read-string x)
+                                      :cljs (js/parseInt x 10)))))
                (i18n :dec-lit)))
-	
+
 	oct-lit
 	(let [lead (if (:leading-sign rec) sign (return nil))]
 	  (<?> (>>= (<:> (lexeme (<+> lead (sym* \0) (many oct-digit) int-suffix)))
-                    (fn [x] (return (read-string x))))
+                    (fn [x] (return #?(:clj  (read-string x)
+                                      :cljs (js/parseInt x 8)))))
                (i18n :oct-lit)))
 
 	hex-lit
 	(let [lead (if (:leading-sign rec) sign (return nil))]
 	  (<?> (>>= (<:> (lexeme (<+> lead (token- "0x") (many1 hex-digit) int-suffix)))
-                    (fn [x] (return (read-string x))))
+                    (fn [x] (return #?(:clj  (read-string x)
+                                      :cljs (js/parseInt x 16)))))
                (i18n :hex-lit)))
 
 	float-lit
@@ -655,7 +671,8 @@
 	                        (option ".0" (<*> (sym* \.) (many1 digit)))
 	                        (optional (<*> (one-of* "eE") sign (many1 digit)))
 			        float-suffix)))
-                    (fn [x] (>> (return (read-string x)) clear-empty)))
+                    (fn [x] (>> (return #?(:clj  (read-string x)
+                                          :cljs (js/parseFloat x))) clear-empty)))
                (i18n :float-lit)))
 
 	bool-lit
@@ -664,7 +681,7 @@
 
 	nil-lit
 	(>> (word "nil" "null") (return nil))
-	
+
 	parens
 	(fn [p] (between (sym \() (sym \)) (lexeme p)))
 
@@ -673,28 +690,28 @@
 
 	angles
 	(fn [p] (between (sym \<) (sym \>) (lexeme p)))
-	
+
 	brackets
 	(fn [p] (between (sym \[) (sym \]) (lexeme p)))
-	
+
 	semi
 	(sym \;)
-	
+
 	comma
 	(sym \,)
-	
+
 	colon
 	(sym \:)
-	
+
 	dot
 	(sym \.)
-	
+
 	semi-sep
 	(fn [p] (sep-by semi (lexeme p)))
-	
+
 	semi-sep1
 	(fn [p] (sep-by1 semi (lexeme p)))
-	
+
 	comma-sep
 	(fn [p] (sep-by comma (lexeme p)))
 

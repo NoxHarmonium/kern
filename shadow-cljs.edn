@@ -1,0 +1,10 @@
+{:source-paths ["src/main/clojure"]
+ :dependencies [[org.clojure/clojurescript "1.11.132"]]
+ :builds
+ {:app  {:target     :browser
+         :output-dir "public/js"
+         :asset-path "/js"
+         ;; Update :entries to point at your demo app's init namespace
+         :modules    {:main {:entries [blancas.kern.core]}}}
+  :test {:target    :node-test
+         :output-to "target/test/tests.js"}}}

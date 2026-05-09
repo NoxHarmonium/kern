@@ -6,26 +6,27 @@
 ;; the terms of this license.
 ;; You must not remove this notice, or any other, from this software.
 
-(ns ^{:doc "The Kern Basic Lexer library.
+(ns ^{:doc "The Kern Shell-style Lexer library.
 
 This namespace is a version of blancas.kern.lexer with the following settings:
 
 comment-start        None
 comment-end          None
-comment-line         None
+comment-line         #
 nested-comments      No
 identifier-start     Letter or _
-identifier-letter    Alphanumeric or _ 
+identifier-letter    Alphanumeric or one of: underscore (_), dash (-), dot (.)
 reserved-names       None
 case-sensitive       Yes
 line-continuation    Backslash
-trim-newline         Yes"
+trim-newline         No"
       :author "Armando Blancas"}
-  blancas.kern.lexer.basic
-  (:use [blancas.kern.core])
-  (:require [blancas.kern.lexer :as lex]))
+  blancas.kern.lexer.shell-style
+  (:require [blancas.kern.core :refer :all]
+            [blancas.kern.lexer :as lex])
+  #?(:cljs (:require-macros [blancas.kern.core])))
 
-(def- rec (lex/make-parsers lex/basic-def))
+(def- rec (lex/make-parsers lex/shell-style))
 
 (def trim       (:trim       rec))
 (def lexeme     (:lexeme     rec))

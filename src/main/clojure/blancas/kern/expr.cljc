@@ -9,8 +9,9 @@
 (ns ^{:doc "Support for the evaluation of expressions."
       :author "Armando Blancas"}
   blancas.kern.expr
-  (:use [blancas.kern core i18n]
-	[blancas.kern.lexer.c-style]))
+  (:require [blancas.kern.core :refer :all]
+            [blancas.kern.lexer.c-style :refer :all])
+  #?(:cljs (:require-macros [blancas.kern.core])))
 
 
 ;; +-------------------------------------------------------------+
@@ -154,7 +155,7 @@
 
 (def pow-op
   "Parses the POW operator."
-  (>> (sym \^) (return #(Math/pow %1 %2))))
+  (>> (sym \^) (return #(#?(:clj Math/pow :cljs js/Math.pow) %1 %2))))
 
 
 (def uni-op
@@ -165,13 +166,13 @@
 
 (def mul-op
   "Multiplicative operator: multiplication, division, or modulo."
-  (bind [op (one-of "*/%")] 
+  (bind [op (one-of "*/%")]
     (return ({\* * \/ quot \% mod} op))))
 
 
 (def add-op
   "Additive operator: addition or subtraction."
-  (bind [op (one-of "+-")] 
+  (bind [op (one-of "+-")]
     (return ({\+ + \- -} op))))
 
 
