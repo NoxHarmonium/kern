@@ -1,0 +1,72 @@
+name: CI
+
+on:
+    push:
+        branches: ["**"]
+    pull_request:
+        branches: ["**"]
+
+jobs:
+    clojure:
+        name: Clojure Tests
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "21"
+
+            - name: Cache Leiningen dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ~/.m2/repository
+                  key: ${{ runner.os }}-lein-${{ hashFiles('project.clj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-lein-
+
+            - name: Install Leiningen
+              uses: DeLaGuardo/setup-clojure@13
+              with:
+                  lein: latest
+
+            - name: Run Clojure tests
+              run: lein test
+
+    clojurescript:
+        name: ClojureScript Tests
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "21"
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "24"
+                  cache: npm
+                  cache-dependency-path: package.json
+
+            - name: Cache Maven dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ~/.m2/repository
+                  key: ${{ runner.os }}-cljs-${{ hashFiles('shadow-cljs.edn') }}
+                  restore-keys: |
+                      ${{ runner.os }}-cljs-
+
+            - name: Install npm dependencies
+              run: npm install
+
+            - name: Compile ClojureScript tests
+              run: npx shadow-cljs compile test
+
+            - name: Run ClojureScript tests
+              run: node target/test/tests.js

@@ -13,6 +13,4 @@
     {:dev {:resource-paths ["src/main/resources" "src/test/resources"]
            :dependencies [[org.clojure/tools.trace "0.8.0"]
                           [nrepl "1.3.0"]
-                          [midje "1.10.9" :exclusions [org.clojure/clojure]]
-                          [criterium "0.4.6"]]
-           :plugins [[lein-midje "3.2.2"]]}})
+                          [criterium "0.4.6"]]}})
