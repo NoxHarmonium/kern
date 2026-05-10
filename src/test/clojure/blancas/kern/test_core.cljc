@@ -54,6 +54,7 @@
                                   get-position set-position parse
                                   value parse-data def- defn* fwd
                                   member? get-msg-str make-pos]])
+            [blancas.kern.test-helpers :refer [assert-error space-string]]
             [clojure.string :as str]
             #?(:clj  [clojure.test :refer [deftest is testing run-tests]]
                :cljs [cljs.test    :refer [deftest is testing run-tests]]))
@@ -65,21 +66,6 @@
 (def make-err-unexpect (ns-resolve 'blancas.kern.core 'make-err-unexpect)))
 #?(:clj
 (def make-err-system   (ns-resolve 'blancas.kern.core 'make-err-system)))
-
-(defn- re-escape [s]
-  #?(:clj  (java.util.regex.Pattern/quote s)
-     :cljs (js/RegExp.escape s)))
-
-(defn assert-error
-  ([unexpected em]
-   (let [pat (re-pattern (str "(?s).*unexpected.+" (re-escape unexpected) ".*"))]
-     (is (re-matches pat em))))
-  ([unexpected expected em]
-   (let [pat (re-pattern (str "(?s).*unexpected.+" (re-escape unexpected)
-                              ".*\\sexpecting.+" (re-escape expected) ".*"))]
-     (is (re-matches pat em)))))
-
-(def space-string #?(:clj "\\space" :cljs " "))
 
 ;; +-------------------------------------------------------------+
 ;; |                       Basic parsers.                        |

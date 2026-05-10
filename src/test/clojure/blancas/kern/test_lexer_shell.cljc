@@ -7,32 +7,7 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns blancas.kern.test-lexer-shell
-  (:require #?(:clj  [blancas.kern.core :refer [reply failed-empty? unexpected unexpected-input expecting
-                                  clear-empty return fail satisfy
-                                  <?> expect <|> >>= bind >> <<
-                                  <$> <*> <:> many many0 many1
-                                  optional option skip skip-many
-                                  skip-many1 sep-by1 sep-by end-by
-                                  end-by1 sep-end-by1 sep-end-by
-                                  between times look-ahead predict
-                                  not-followed-by many-till <+>
-                                  search any-char letter lower
-                                  upper white-space space tab
-                                  digit hex-digit oct-digit
-                                  alpha-num sym* sym- token*
-                                  token- word* word- one-of*
-                                  none-of* new-line* eof skip-ws
-                                  field* split-on split mark
-                                  dec-num oct-num hex-num
-                                  float-num get-state put-state
-                                  modify-state get-input set-input
-                                  get-position set-position parse
-                                  value *tab-width* print-error
-                                  run run* parse-file runf runf*
-                                  parse-data parse-data-file def-
-                                  defn* fwd char-seq f->s member?
-                                  get-msg-str make-pos]]
-               :cljs [blancas.kern.core :refer [reply failed-empty? unexpected unexpected-input expecting
+  (:require [blancas.kern.core :refer [reply failed-empty? unexpected unexpected-input expecting
                                   clear-empty return fail satisfy
                                   <?> expect <|> >>= bind >> <<
                                   <$> <*> <:> many many0 many1
@@ -53,7 +28,7 @@
                                   modify-state get-input set-input
                                   get-position set-position parse
                                   value parse-data def- defn* fwd
-                                  member? get-msg-str make-pos]])
+                                  member? get-msg-str make-pos]]
             [blancas.kern.lexer.shell-style :refer [trim lexeme sym new-line one-of none-of token word identifier
                                   field char-lit string-lit
                                   dec-lit oct-lit hex-lit
@@ -61,24 +36,11 @@
                                   parens braces angles brackets
                                   semi comma colon dot semi-sep
                                   semi-sep1 comma-sep comma-sep1]]
+            [blancas.kern.test-helpers :refer [assert-error]]
             [clojure.string :as str]
             #?(:clj  [clojure.test :refer [deftest is testing run-tests]]
                :cljs [cljs.test    :refer [deftest is testing run-tests]]))
   #?(:cljs (:require-macros [blancas.kern.core])))
-
-(defn- re-escape [s]
-  #?(:clj  (java.util.regex.Pattern/quote s)
-     :cljs (js/RegExp.escape s)))
-
-(defn assert-error
-  ([unexpected em]
-   (let [pat (re-pattern (str "(?s).*unexpected.+" (re-escape unexpected) ".*"))]
-     (is (re-matches pat em))))
-  ([unexpected expected em]
-   (let [pat (re-pattern (str "(?s).*unexpected.+" (re-escape unexpected)
-                              ".*\\sexpecting.+" (re-escape expected) ".*"))]
-     (is (re-matches pat em)))))
-
 
 ;; +-------------------------------------------------------------+
 ;; |                    Shell-style lexers.                      |
