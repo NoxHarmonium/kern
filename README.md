@@ -1,9 +1,20 @@
 # Kern
 
-Kern is a library of parser combinators for Clojure. It is useful for 
-implementing recursive-descent parsers based on predictive LL(1) grammars 
-with on-demand, unlimited look-ahead. The inspiration for Kern comes from 
-Parsec, a Haskell library written by Daan Leijen,  and from work by Graham 
+Note: Forked on 2026-10-10 to try and add support for clojurescript and modernise the project,
+so my project that depends on this library (https://github.com/NoxHarmonium/nanoweave) can also
+support clojurescript.
+
+All of this amazing code and documentation was written by Armando Blancas (blancas),
+not me.
+
+I'll update this readme if I publish the forked version anywhere.
+
+--
+
+Kern is a library of parser combinators for Clojure. It is useful for
+implementing recursive-descent parsers based on predictive LL(1) grammars
+with on-demand, unlimited look-ahead. The inspiration for Kern comes from
+Parsec, a Haskell library written by Daan Leijen,  and from work by Graham
 Hutton, Erik Meijer, and William Burge.
 
 ## Features
@@ -25,11 +36,11 @@ case sensitivity, and patterns for identifiers, among others.
 
 ## Parser Combinators
 
-A parser is a high-order function whose job is to match an input string against 
-a specific pattern. A combinator is a parsing function whose 
-pattern is determined by parsers or by other combinators for the purposes 
+A parser is a high-order function whose job is to match an input string against
+a specific pattern. A combinator is a parsing function whose
+pattern is determined by parsers or by other combinators for the purposes
 of providing repetition, choice, filtering, or to enforce a certain order in the input.
-We also use the term *parser* in its more general sense, as a logical module of 
+We also use the term *parser* in its more general sense, as a logical module of
 parsing functions for a particular task.
 
 The key feature of this technique is the ability to devise a composition and
@@ -41,7 +52,7 @@ the resulting parser may itsef be composed, like any other, custom or predefined
 Thus parser combinators offer means of abstraction and composition
 that result in a powerful and pleasant way to code parsing modules. Kern provides
 a rich set of parsers for higher productivity and not having to start from scratch.
-The next section illustrates the above by defining a custom parser for JSON data. 
+The next section illustrates the above by defining a custom parser for JSON data.
 
 ## Sample Usage
 
@@ -86,9 +97,9 @@ on pure functions and the systematic composition of its core parsers. My main
 goals are high productivity and usability. I'll make, however, every effort
 to improve the efficiency of the library.
 
-Just to give a ballpark figure for performance at the REPL, on my MacBook Pro, 
-without any JVM warm up, Kern will parse 350K worth of JSON data per second 
-using the above definitions, with variations of some 10% either way. In contrast, 
+Just to give a ballpark figure for performance at the REPL, on my MacBook Pro,
+without any JVM warm up, Kern will parse 350K worth of JSON data per second
+using the above definitions, with variations of some 10% either way. In contrast,
 [data.json](https://github.com/clojure/data.json) will parse 4MB in a quarter
 of a second. (I realize times can vary a lot, but after a few runs they
 converge somewhat; YMMV.)
