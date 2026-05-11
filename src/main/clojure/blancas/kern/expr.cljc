@@ -9,8 +9,8 @@
 (ns ^{:doc "Support for the evaluation of expressions."
       :author "Armando Blancas"}
   blancas.kern.expr
-  (:require [blancas.kern.core :refer :all]
-            [blancas.kern.lexer.c-style :refer :all])
+  (:require [blancas.kern.core :refer [<|> bind return >>]]
+            [blancas.kern.lexer.c-style :refer [sym one-of token]])
   #?(:cljs (:require-macros [blancas.kern.core])))
 
 
